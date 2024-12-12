@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import os
+import subprocess
 
 def generate_container_report(df, container_name, namespace):
     """
@@ -37,7 +38,6 @@ def generate_container_report(df, container_name, namespace):
                    name='CPU limit'),
         row=1, col=1
     )
-
 
     # Memory Metrics Line Chart
     fig.add_trace(
@@ -131,7 +131,7 @@ def generate_container_report(df, container_name, namespace):
 
 def generate_reports(csv_file):
     # Read the CSV file
-    df = pd.read_csv(csv_file, parse_dates=['interval_start'])
+    df = pd.read_csv(csv_file, parse_dates=True)
 
     # Create output directory if it doesn't exist
     os.makedirs('container_reports', exist_ok=True)
@@ -153,5 +153,22 @@ def generate_reports(csv_file):
         
         print(f"Generated report for {namespace}/{container_name}: {report_path}")
 
-# Usage example
-generate_reports('input.csv')
+def main():
+    # Run the merged_sort_csv.sh script
+    try:
+        subprocess.run(['bash', 'merged_sort_csv.sh'], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing merged_sort_csv.sh: {e}")
+        return
+    except FileNotFoundError:
+        print("merged_sort_csv.sh script not found in the current directory.")
+        return
+    
+    # Use the sorted_merged.csv as the default input
+    input_file = 'sorted_merged.csv'
+
+    # Generate reports
+    generate_reports(input_file)
+
+if __name__ == '__main__':
+    main()
